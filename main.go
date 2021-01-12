@@ -69,7 +69,6 @@ func main() {
 	opts := plaid.ClientOptions{
 		viper.GetString("plaid.client_id"),
 		viper.GetString("plaid.secret"),
-		viper.GetString("plaid.public_key"),
 		plaidEnv,
 		&http.Client{},
 	}
@@ -102,13 +101,18 @@ func main() {
 					itemOrAlias = itemID
 				}
 
-				tokenPair, err = linker.Relink(itemOrAlias, port)
+				err = linker.Relink(itemOrAlias, port)
+				log.Println("Institution relinked!")
+				return
 			} else {
 				tokenPair, err = linker.Link(port)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				data.Tokens[tokenPair.ItemID] = tokenPair.AccessToken
+				err = data.Save()
 			}
 
-			data.Tokens[tokenPair.ItemID] = tokenPair.AccessToken
-			err = data.Save()
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -334,7 +338,7 @@ func main() {
 					IncludeOptionalMetadata: withOptionalMetadataFlag,
 					IncludeStatus:           withStatusFlag,
 				}
-				resp, err := client.GetInstitutionByIDWithOptions(instID, opts)
+				resp, err := client.GetInstitutionByIDWithOptions(instID, []string {"US"}, opts)
 				if err != nil {
 					return err
 				}
@@ -374,7 +378,6 @@ Configuration:
   plaid-cli will look at the following environment variables for API credentials:
   
     PLAID_CLIENT_ID=<client id>
-    PLAID_PUBLIC_KEY=<public key>
     PLAID_SECRET=<devlopment secret>
     PLAID_ENVIRONMENT=development
   
@@ -385,7 +388,6 @@ Configuration:
   
     [plaid]
     client_id = "<client id>"
-    public_key = "<public key>"
     secret = "<development secret>"
     environment = "development"
   
@@ -413,11 +415,6 @@ Configuration:
 	}
 	if !viper.IsSet("plaid.secret") {
 		log.Println("⚠️ PLAID_SECRET not set. Please see the configuration instructions below.")
-		rootCommand.Help()
-		os.Exit(1)
-	}
-	if !viper.IsSet("plaid.public_key") {
-		log.Println("⚠️ PLAID_PUBLIC_KEY not set. Please see the configuration instructions below.")
 		rootCommand.Help()
 		os.Exit(1)
 	}
@@ -455,16 +452,10 @@ func WithRelinkOnAuthError(itemID string, data *plaid_cli.Data, linker *plaid_cl
 		if e.ErrorCode == "ITEM_LOGIN_REQUIRED" {
 			log.Println("Login expired. Relinking...")
 
-			// TODO: this relink logic duplicated from the link command above
-
 			port := viper.GetString("link.port")
 
-			var tokenPair *plaid_cli.TokenPair
+			err = linker.Relink(itemID, port)
 
-			tokenPair, err = linker.Relink(itemID, port)
-
-			data.Tokens[tokenPair.ItemID] = tokenPair.AccessToken
-			err = data.Save()
 			if err != nil {
 				return err
 			}

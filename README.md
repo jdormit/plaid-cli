@@ -26,7 +26,6 @@ plaid-cli will look at the following environment variables for API credentials:
 
 ```sh
 PLAID_CLIENT_ID=<client id>
-PLAID_PUBLIC_KEY=<public key>
 PLAID_SECRET=<devlopment secret>
 PLAID_ENVIRONMENT=development
 ```
@@ -39,7 +38,6 @@ API credentials can also be specified using a config file located at
 ```toml
 [plaid]
 client_id = "<client id>"
-public_key = "<public key>"
 secret = "<development secret>"
 environment = "development"
 ```
