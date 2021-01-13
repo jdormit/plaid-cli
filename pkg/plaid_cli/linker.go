@@ -149,7 +149,7 @@ func handleLink(linker *Linker, linkToken string) func(w http.ResponseWriter, r 
 			t, _ = t.Parse(linkTemplate)
 
 			d := LinkTmplData{
-				LinkToken:   linkToken,
+				LinkToken: linkToken,
 			}
 			t.Execute(w, d)
 		case http.MethodPost:
@@ -169,11 +169,11 @@ func handleLink(linker *Linker, linkToken string) func(w http.ResponseWriter, r 
 }
 
 type LinkTmplData struct {
-	LinkToken   string
+	LinkToken string
 }
 
 type RelinkTmplData struct {
-	LinkToken   string
+	LinkToken string
 }
 
 func handleRelink(linker *Linker, linkToken string) func(w http.ResponseWriter, r *http.Request) {
@@ -184,7 +184,7 @@ func handleRelink(linker *Linker, linkToken string) func(w http.ResponseWriter, 
 			t, _ = t.Parse(relinkTemplate)
 
 			d := RelinkTmplData{
-				LinkToken:   linkToken,
+				LinkToken: linkToken,
 			}
 			t.Execute(w, d)
 		case http.MethodPost:
@@ -207,19 +207,19 @@ var linkTemplate string = `<html>
   <head>
     <style>
     .alert-success {
-        font-size: 1.2em;
-        font-family: Arial, Helvetica, sans-serif;
-        background-color: #008000;
-        color: #fff;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 15px;
-        width: 100%;
-        height: 100%;
+	font-size: 1.2em;
+	font-family: Arial, Helvetica, sans-serif;
+	background-color: #008000;
+	color: #fff;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 15px;
+	width: 100%;
+	height: 100%;
     }
     .hidden {
-        visibility: hidden;
+	visibility: hidden;
     }
     </style>
   </head>
@@ -229,28 +229,28 @@ var linkTemplate string = `<html>
     <script type="text/javascript">
      (function($) {
        var handler = Plaid.create({
-         token: '{{ .LinkToken }}',
-         onSuccess: function(public_token, metadata) {
+	 token: '{{ .LinkToken }}',
+	 onSuccess: function(public_token, metadata) {
 	   // Send the public_token to your app server.
-           // The metadata object contains info about the institution the
-           // user selected and the account ID or IDs, if the
-           // Select Account view is enabled.
-           $.post('/link', {
-             public_token: public_token,
-           });
-           document.getElementById("alert").classList.remove("hidden");
-         },
-         onExit: function(err, metadata) {
-           // The user exited the Link flow.
-           if (err != null) {
-             // The user encountered a Plaid API error prior to exiting.
-           }
-           // metadata contains information about the institution
-           // that the user selected and the most recent API request IDs.
-           // Storing this information can be helpful for support.
+	   // The metadata object contains info about the institution the
+	   // user selected and the account ID or IDs, if the
+	   // Select Account view is enabled.
+	   $.post('/link', {
+	     public_token: public_token,
+	   });
+	   document.getElementById("alert").classList.remove("hidden");
+	 },
+	 onExit: function(err, metadata) {
+	   // The user exited the Link flow.
+	   if (err != null) {
+	     // The user encountered a Plaid API error prior to exiting.
+	   }
+	   // metadata contains information about the institution
+	   // that the user selected and the most recent API request IDs.
+	   // Storing this information can be helpful for support.
 
-           document.getElementById("alert").classList.remove("hidden");
-         }
+	   document.getElementById("alert").classList.remove("hidden");
+	 }
        });
 
        handler.open();
@@ -260,8 +260,8 @@ var linkTemplate string = `<html>
 
     <div id="alert" class="alert-success hidden">
       <div>
-        <h2>All done here!</h2>
-        <p>You can close this window and go back to plaid-cli.</p>
+	<h2>All done here!</h2>
+	<p>You can close this window and go back to plaid-cli.</p>
       </div>
     </div>
   </body>
@@ -271,19 +271,19 @@ var relinkTemplate string = `<html>
   <head>
     <style>
     .alert-success {
-        font-size: 1.2em;
-        font-family: Arial, Helvetica, sans-serif;
-        background-color: #008000;
-        color: #fff;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 15px;
-        width: 100%;
-        height: 100%;
+	font-size: 1.2em;
+	font-family: Arial, Helvetica, sans-serif;
+	background-color: #008000;
+	color: #fff;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 15px;
+	width: 100%;
+	height: 100%;
     }
     .hidden {
-        visibility: hidden;
+	visibility: hidden;
     }
     </style>
   </head>
@@ -293,28 +293,28 @@ var relinkTemplate string = `<html>
     <script type="text/javascript">
      (function($) {
        var handler = Plaid.create({
-         token: '{{ .LinkToken }}',
-         onSuccess: (public_token, metadata) => {
-           // You do not need to repeat the /item/public_token/exchange
-           // process when a user uses Link in update mode.
-           // The Item's access_token has not changed.
-         },
-         onExit: function(err, metadata) {
-           if (err != null) {
-             $.post('/relink', {
-               error: err
-             });
-           } else {
-             $.post('/relink', {
-               error: null
-             });
-           }
-           // metadata contains information about the institution
-           // that the user selected and the most recent API request IDs.
-           // Storing this information can be helpful for support.
+	 token: '{{ .LinkToken }}',
+	 onSuccess: (public_token, metadata) => {
+	   // You do not need to repeat the /item/public_token/exchange
+	   // process when a user uses Link in update mode.
+	   // The Item's access_token has not changed.
+	 },
+	 onExit: function(err, metadata) {
+	   if (err != null) {
+	     $.post('/relink', {
+	       error: err
+	     });
+	   } else {
+	     $.post('/relink', {
+	       error: null
+	     });
+	   }
+	   // metadata contains information about the institution
+	   // that the user selected and the most recent API request IDs.
+	   // Storing this information can be helpful for support.
 
-           document.getElementById("alert").classList.remove("hidden");
-         }
+	   document.getElementById("alert").classList.remove("hidden");
+	 }
        });
 
        handler.open();
@@ -324,8 +324,8 @@ var relinkTemplate string = `<html>
 
     <div id="alert" class="alert-success hidden">
       <div>
-        <h2>All done here!</h2>
-        <p>You can close this window and go back to plaid-cli.</p>
+	<h2>All done here!</h2>
+	<p>You can close this window and go back to plaid-cli.</p>
       </div>
     </div>
   </body>
