@@ -20,7 +20,38 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/spf13/viper"
+
+	"github.com/Xuanwo/go-locale"
+	"golang.org/x/text/language"
 )
+
+func sliceToMap(slice []string) map[string]bool {
+	set := make(map[string]bool, len(slice))
+	for _, s := range slice {
+		set[s] = true
+	}
+	return set
+}
+
+// See https://plaid.com/docs/link/customization/#language-and-country
+var plaidSupportedCountries = []string{"US", "CA", "GB", "IE", "ES", "FR", "NL"}
+var plaidSupportedLanguages = []string{"en", "fr", "es", "nl"}
+
+func AreValidCountries(countries []string) bool {
+	supportedCountries := sliceToMap(plaidSupportedCountries)
+	for _, c := range countries {
+		if !supportedCountries[c] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func IsValidLanguageCode(lang string) bool {
+	supportedLanguages := sliceToMap(plaidSupportedLanguages)
+	return supportedLanguages[lang]
+}
 
 func main() {
 	log.SetFlags(0)
@@ -53,6 +84,41 @@ func main() {
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_", ".", "_"))
 	viper.AutomaticEnv()
 
+	tag, err := locale.Detect()
+	if err != nil {
+		tag = language.AmericanEnglish
+	}
+
+	region, _ := tag.Region()
+	base, _ := tag.Base()
+
+	var country string
+	if region.IsCountry() {
+		country = region.String()
+	} else {
+		country = "US"
+	}
+
+	lang := base.String()
+
+	viper.SetDefault("plaid.countries", []string{country})
+	countriesOpt := viper.GetStringSlice("plaid.countries")
+	var countries []string
+	for _, c := range countriesOpt {
+		countries = append(countries, strings.ToUpper(c))
+	}
+
+	viper.SetDefault("plaid.language", lang)
+	lang = viper.GetString("plaid.language")
+
+	if !AreValidCountries(countries) {
+		log.Fatalln("⚠️  Invalid countries. Please configure `plaid.countries` (using an envvar, PLAID_COUNTRIES, or in plaid-cli's config file) to a subset of countries that Plaid supports. Plaid supports the following countries: ", plaidSupportedCountries)
+	}
+
+	if !IsValidLanguageCode(lang) {
+		log.Fatalln("⚠️  Invalid language code. Please configure `plaid.language` (using an envvar, PLAID_LANGUAGE, or in plaid-cli's config file) to a language that Plaid supports. Plaid supports the following languages: ", plaidSupportedLanguages)
+	}
+
 	viper.SetDefault("plaid.environment", "development")
 	plaidEnvStr := strings.ToLower(viper.GetString("plaid.environment"))
 
@@ -79,7 +145,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	linker := plaid_cli.NewLinker(data, client, opts)
+	linker := plaid_cli.NewLinker(data, client, countries, lang)
 
 	linkCommand := &cobra.Command{
 		Use:   "link [ITEM-ID-OR-ALIAS]",
@@ -338,7 +404,7 @@ func main() {
 					IncludeOptionalMetadata: withOptionalMetadataFlag,
 					IncludeStatus:           withStatusFlag,
 				}
-				resp, err := client.GetInstitutionByIDWithOptions(instID, []string {"US"}, opts)
+				resp, err := client.GetInstitutionByIDWithOptions(instID, countries, opts)
 				if err != nil {
 					return err
 				}
@@ -380,6 +446,8 @@ Configuration:
     PLAID_CLIENT_ID=<client id>
     PLAID_SECRET=<devlopment secret>
     PLAID_ENVIRONMENT=development
+    PLAID_LANGUAGE=en  # optional, detected using system's locale
+    PLAID_COUNTRIES=US # optional, detected using system's locale
   
   I recommend setting and exporting these on shell startup.
   

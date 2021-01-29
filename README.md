@@ -28,6 +28,8 @@ plaid-cli will look at the following environment variables for API credentials:
 PLAID_CLIENT_ID=<client id>
 PLAID_SECRET=<devlopment secret>
 PLAID_ENVIRONMENT=development
+PLAID_LANGUAGE=en  # optional, detected using system's locale
+PLAID_COUNTRIES=US # optional, detected using system's locale
 ```
 
 I recommend setting and exporting these on shell startup.

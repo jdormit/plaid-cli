@@ -17,8 +17,9 @@ type Linker struct {
 	RelinkResults chan bool
 	Errors        chan error
 	Client        *plaid.Client
-	ClientOpts    plaid.ClientOptions
 	Data          *Data
+	countries     []string
+	lang          string
 }
 
 type TokenPair struct {
@@ -32,14 +33,13 @@ func (l *Linker) Relink(itemID string, port string) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client, err := plaid.NewClient(l.ClientOpts)
-	resp, err := client.CreateLinkToken(plaid.LinkTokenConfigs{
+	resp, err := l.Client.CreateLinkToken(plaid.LinkTokenConfigs{
 		User: &plaid.LinkTokenUser{
 			ClientUserID: hostname,
 		},
 		ClientName:   "plaid-cli",
-		CountryCodes: []string{"US"},
-		Language:     "en",
+		CountryCodes: l.countries,
+		Language:     l.lang,
 		AccessToken:  token,
 	})
 	if err != nil {
@@ -53,15 +53,14 @@ func (l *Linker) Link(port string) (*TokenPair, error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client, err := plaid.NewClient(l.ClientOpts)
-	resp, err := client.CreateLinkToken(plaid.LinkTokenConfigs{
+	resp, err := l.Client.CreateLinkToken(plaid.LinkTokenConfigs{
 		User: &plaid.LinkTokenUser{
 			ClientUserID: hostname,
 		},
 		ClientName:   "plaid-cli",
 		Products:     []string{"transactions"},
-		CountryCodes: []string{"US"},
-		Language:     "en",
+		CountryCodes: l.countries,
+		Language:     l.lang,
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -130,14 +129,15 @@ func (l *Linker) exchange(publicToken string) (plaid.ExchangePublicTokenResponse
 	return l.Client.ExchangePublicToken(publicToken)
 }
 
-func NewLinker(data *Data, client *plaid.Client, clientOpts plaid.ClientOptions) *Linker {
+func NewLinker(data *Data, client *plaid.Client, countries []string, lang string) *Linker {
 	return &Linker{
 		Results:       make(chan string),
 		RelinkResults: make(chan bool),
 		Errors:        make(chan error),
 		Client:        client,
-		ClientOpts:    clientOpts,
 		Data:          data,
+		countries:     countries,
+		lang:          lang,
 	}
 }
 
